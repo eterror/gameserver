@@ -9,9 +9,16 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocket.Server({ server });
 
 const rooms = {};
+const nameList = ["Kobra", "Python", "Mamba", "Viper", "Anakonda", "Garter", "Taipan", "Hydra"];
 
 function generateId() {
   return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+function getRandomName() {
+  let base = nameList[Math.floor(Math.random() * nameList.length)];
+  let num = Math.floor(10 + Math.random() * 90);
+  return base + "_" + num;
 }
 
 function createRoomState() {
@@ -20,36 +27,36 @@ function createRoomState() {
     p2: null,
     name1: '',
     name2: '',
-    s1: [{x: 5, y: 5}, {x: 4, y: 5}, {x: 3, y: 5}],
+    s1: [{x: 8, y: 10}, {x: 7, y: 10}, {x: 6, y: 10}],
     d1: {x: 1, y: 0},
     nd1: {x: 1, y: 0},
     sc1: 0,
-    s2: [{x: 14, y: 12}, {x: 15, y: 12}, {x: 16, y: 12}],
+    s2: [{x: 23, y: 15}, {x: 24, y: 15}, {x: 25, y: 15}],
     d2: {x: -1, y: 0},
     nd2: {x: -1, y: 0},
     sc2: 0,
-    food: {x: 10, y: 8},
+    food: {x: 15, y: 12},
     isGameOver: 0,
     interval: null
   };
 }
 
 function resetGame(room) {
-  room.s1 = [{x: 5, y: 5}, {x: 4, y: 5}, {x: 3, y: 5}];
+  room.s1 = [{x: 8, y: 10}, {x: 7, y: 10}, {x: 6, y: 10}];
   room.d1 = {x: 1, y: 0};
   room.nd1 = {x: 1, y: 0};
   room.sc1 = 0;
-  room.s2 = [{x: 14, y: 12}, {x: 15, y: 12}, {x: 16, y: 12}];
+  room.s2 = [{x: 23, y: 15}, {x: 24, y: 15}, {x: 25, y: 15}];
   room.d2 = {x: -1, y: 0};
   room.nd2 = {x: -1, y: 0};
   room.sc2 = 0;
-  room.food = {x: 10, y: 8};
+  room.food = {x: 15, y: 12};
   room.isGameOver = 0;
 }
 
 function spawnFood(room) {
-  room.food.x = Math.floor(Math.random() * 20);
-  room.food.y = Math.floor(Math.random() * 13) + 2;
+  room.food.x = Math.floor(Math.random() * 32);
+  room.food.y = Math.floor(Math.random() * 22) + 2;
 }
 
 function gameTick(roomId) {
@@ -63,8 +70,8 @@ function gameTick(roomId) {
   let h1 = {x: room.s1[0].x + room.d1.x, y: room.s1[0].y + room.d1.y};
   let h2 = {x: room.s2[0].x + room.d2.x, y: room.s2[0].y + room.d2.y};
 
-  if (h1.x < 0 || h1.x >= 20 || h1.y < 2 || h1.y >= 15) room.isGameOver = 1;
-  if (h2.x < 0 || h2.x >= 20 || h2.y < 2 || h2.y >= 15) room.isGameOver = 1;
+  if (h1.x < 0 || h1.x >= 32 || h1.y < 2 || h1.y >= 24) room.isGameOver = 1;
+  if (h2.x < 0 || h2.x >= 32 || h2.y < 2 || h2.y >= 24) room.isGameOver = 1;
 
   for (let p of room.s1) {
     if (p.x === h1.x && p.y === h1.y) room.isGameOver = 1;
@@ -123,7 +130,7 @@ function sendRoomList(ws) {
 }
 
 wss.on('connection', (ws) => {
-  ws.playerName = "P" + Math.floor(100 + Math.random() * 900);
+  ws.playerName = getRandomName();
   ws.currentRoom = null;
   ws.role = 0;
 
