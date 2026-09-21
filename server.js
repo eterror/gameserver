@@ -9,7 +9,7 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocket.Server({ server });
 
 const rooms = {};
-const nameList = ["Kobra", "Python", "Mamba", "Viper", "Anakonda", "Garter", "Taipan", "Hydra"];
+const nameList = ["KOBRA", "PYTHON", "MAMBA", "VIPER", "ANAKONDA", "GARTER", "TAIPAN", "HYDRA"];
 
 function generateId() {
   return Math.floor(1000 + Math.random() * 9000).toString();
