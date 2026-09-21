@@ -117,16 +117,19 @@ function broadcast(room, msg) {
   if (room.p2 && room.p2.readyState === WebSocket.OPEN) room.p2.send(msg);
 }
 
-function sendRoomList(ws) {
+function broadcastLobbyRooms() {
   let list = ['ROOMS'];
   for (let rId in rooms) {
     if (!rooms[rId].p2) {
       list.push(rId);
     }
   }
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(list.join(' '));
-  }
+  let payload = list.join(' ');
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN && !client.currentRoom) {
+      client.send(payload);
+    }
+  });
 }
 
 wss.on('connection', (ws) => {
@@ -134,7 +137,7 @@ wss.on('connection', (ws) => {
   ws.currentRoom = null;
   ws.role = 0;
 
-  sendRoomList(ws);
+  broadcastLobbyRooms();
 
   ws.on('message', (msg) => {
     let m = msg.toString().trim();
@@ -142,7 +145,7 @@ wss.on('connection', (ws) => {
     let cmd = parts[0];
 
     if (cmd === 'LIST') {
-      sendRoomList(ws);
+      broadcastLobbyRooms();
     } else if (cmd === 'CREATE') {
       let rId = generateId();
       rooms[rId] = createRoomState();
@@ -152,6 +155,7 @@ wss.on('connection', (ws) => {
       ws.role = 1;
       ws.send('JOINED ' + rId + ' 1 ' + ws.playerName);
       rooms[rId].interval = setInterval(() => gameTick(rId), 150);
+      broadcastLobbyRooms();
     } else if (cmd === 'JOIN') {
       let rId = parts[1];
       if (rooms[rId] && !rooms[rId].p2) {
@@ -161,6 +165,7 @@ wss.on('connection', (ws) => {
         ws.role = 2;
         ws.send('JOINED ' + rId + ' 2 ' + ws.playerName);
         resetGame(rooms[rId]);
+        broadcastLobbyRooms();
       } else {
         ws.send('ERROR_FULL');
       }
@@ -185,6 +190,7 @@ wss.on('connection', (ws) => {
       let room = rooms[ws.currentRoom];
       if (room.interval) clearInterval(room.interval);
       delete rooms[ws.currentRoom];
+      broadcastLobbyRooms();
     }
   });
 });
