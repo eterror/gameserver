@@ -37,6 +37,8 @@ function createRoomState() {
     sc2: 0,
     food: {x: 15, y: 12},
     isGameOver: 0,
+    countdown: 3,
+    ticksInCountdown: 0,
     interval: null
   };
 }
@@ -52,6 +54,8 @@ function resetGame(room) {
   room.sc2 = 0;
   room.food = {x: 15, y: 12};
   room.isGameOver = 0;
+  room.countdown = 3;
+  room.ticksInCountdown = 0;
 }
 
 function spawnFood(room) {
@@ -64,46 +68,54 @@ function gameTick(roomId) {
   if (!room || !room.p1 || !room.p2) return;
   if (room.isGameOver) return;
 
-  room.d1 = room.nd1;
-  room.d2 = room.nd2;
+  if (room.countdown > 0) {
+    room.ticksInCountdown++;
+    if (room.ticksInCountdown >= 6) {
+      room.countdown--;
+      room.ticksInCountdown = 0;
+    }
+  } else {
+    room.d1 = room.nd1;
+    room.d2 = room.nd2;
 
-  let h1 = {x: room.s1[0].x + room.d1.x, y: room.s1[0].y + room.d1.y};
-  let h2 = {x: room.s2[0].x + room.d2.x, y: room.s2[0].y + room.d2.y};
+    let h1 = {x: room.s1[0].x + room.d1.x, y: room.s1[0].y + room.d1.y};
+    let h2 = {x: room.s2[0].x + room.d2.x, y: room.s2[0].y + room.d2.y};
 
-  if (h1.x < 0 || h1.x >= 32 || h1.y < 2 || h1.y >= 24) room.isGameOver = 1;
-  if (h2.x < 0 || h2.x >= 32 || h2.y < 2 || h2.y >= 24) room.isGameOver = 1;
+    if (h1.x < 0 || h1.x >= 32 || h1.y < 2 || h1.y >= 24) room.isGameOver = 1;
+    if (h2.x < 0 || h2.x >= 32 || h2.y < 2 || h2.y >= 24) room.isGameOver = 1;
 
-  for (let p of room.s1) {
-    if (p.x === h1.x && p.y === h1.y) room.isGameOver = 1;
-    if (p.x === h2.x && p.y === h2.y) room.isGameOver = 1;
-  }
-
-  for (let p of room.s2) {
-    if (p.x === h1.x && p.y === h1.y) room.isGameOver = 1;
-    if (p.x === h2.x && p.y === h2.y) room.isGameOver = 1;
-  }
-
-  if (h1.x === h2.x && h1.y === h2.y) room.isGameOver = 1;
-
-  if (!room.isGameOver) {
-    room.s1.unshift(h1);
-    if (h1.x === room.food.x && h1.y === room.food.y) {
-      room.sc1 += 10;
-      spawnFood(room);
-    } else {
-      room.s1.pop();
+    for (let p of room.s1) {
+      if (p.x === h1.x && p.y === h1.y) room.isGameOver = 1;
+      if (p.x === h2.x && p.y === h2.y) room.isGameOver = 1;
     }
 
-    room.s2.unshift(h2);
-    if (h2.x === room.food.x && h2.y === room.food.y) {
-      room.sc2 += 10;
-      spawnFood(room);
-    } else {
-      room.s2.pop();
+    for (let p of room.s2) {
+      if (p.x === h1.x && p.y === h1.y) room.isGameOver = 1;
+      if (p.x === h2.x && p.y === h2.y) room.isGameOver = 1;
+    }
+
+    if (h1.x === h2.x && h1.y === h2.y) room.isGameOver = 1;
+
+    if (!room.isGameOver) {
+      room.s1.unshift(h1);
+      if (h1.x === room.food.x && h1.y === room.food.y) {
+        room.sc1 += 10;
+        spawnFood(room);
+      } else {
+        room.s1.pop();
+      }
+
+      room.s2.unshift(h2);
+      if (h2.x === room.food.x && h2.y === room.food.y) {
+        room.sc2 += 10;
+        spawnFood(room);
+      } else {
+        room.s2.pop();
+      }
     }
   }
 
-  let parts = ['S', room.food.x, room.food.y, room.sc1, room.sc2, room.isGameOver, room.s1.length];
+  let parts = ['S', room.food.x, room.food.y, room.sc1, room.sc2, room.isGameOver, room.countdown, room.s1.length];
   for (let p of room.s1) parts.push(p.x, p.y);
   parts.push(room.s2.length);
   for (let p of room.s2) parts.push(p.x, p.y);
