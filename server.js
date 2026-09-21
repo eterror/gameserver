@@ -132,6 +132,26 @@ function broadcastLobbyRooms() {
   });
 }
 
+function leaveRoom(ws) {
+  if (ws.currentRoom && rooms[ws.currentRoom]) {
+    let rId = ws.currentRoom;
+    let room = rooms[rId];
+    if (room.interval) clearInterval(room.interval);
+    if (room.p1 && room.p1.readyState === WebSocket.OPEN) {
+      room.p1.currentRoom = null;
+      room.p1.role = 0;
+      room.p1.send('LOBBY');
+    }
+    if (room.p2 && room.p2.readyState === WebSocket.OPEN) {
+      room.p2.currentRoom = null;
+      room.p2.role = 0;
+      room.p2.send('LOBBY');
+    }
+    delete rooms[rId];
+    broadcastLobbyRooms();
+  }
+}
+
 wss.on('connection', (ws) => {
   ws.playerName = getRandomName();
   ws.currentRoom = null;
@@ -146,6 +166,8 @@ wss.on('connection', (ws) => {
 
     if (cmd === 'LIST') {
       broadcastLobbyRooms();
+    } else if (cmd === 'LEAVE') {
+      leaveRoom(ws);
     } else if (cmd === 'CREATE') {
       let rId = generateId();
       rooms[rId] = createRoomState();
@@ -186,12 +208,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    if (ws.currentRoom && rooms[ws.currentRoom]) {
-      let room = rooms[ws.currentRoom];
-      if (room.interval) clearInterval(room.interval);
-      delete rooms[ws.currentRoom];
-      broadcastLobbyRooms();
-    }
+    leaveRoom(ws);
   });
 });
 
