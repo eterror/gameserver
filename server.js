@@ -241,4 +241,4 @@ setInterval(() => {
     ws.isAlive = false;
     ws.ping();
   });
-}, 20000);
+}, 10000);
