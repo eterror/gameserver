@@ -39,7 +39,8 @@ function createRoomState() {
     isGameOver: 0,
     countdown: 3,
     ticksInCountdown: 0,
-    interval: null
+    interval: null,
+    rules: { walls: 1 }
   };
 }
 
@@ -63,6 +64,13 @@ function spawnFood(room) {
   room.food.y = Math.floor(Math.random() * 22) + 2;
 }
 
+function wrapPoint(p) {
+  if (p.x < 0) p.x = 31;
+  if (p.x >= 32) p.x = 0;
+  if (p.y < 2) p.y = 23;
+  if (p.y >= 24) p.y = 2;
+}
+
 function gameTick(roomId) {
   const room = rooms[roomId];
   if (!room || !room.p1 || !room.p2) return;
@@ -81,8 +89,13 @@ function gameTick(roomId) {
     let h1 = {x: room.s1[0].x + room.d1.x, y: room.s1[0].y + room.d1.y};
     let h2 = {x: room.s2[0].x + room.d2.x, y: room.s2[0].y + room.d2.y};
 
-    if (h1.x < 0 || h1.x >= 32 || h1.y < 2 || h1.y >= 24) room.isGameOver = 1;
-    if (h2.x < 0 || h2.x >= 32 || h2.y < 2 || h2.y >= 24) room.isGameOver = 1;
+    if (room.rules.walls) {
+      if (h1.x < 0 || h1.x >= 32 || h1.y < 2 || h1.y >= 24) room.isGameOver = 1;
+      if (h2.x < 0 || h2.x >= 32 || h2.y < 2 || h2.y >= 24) room.isGameOver = 1;
+    } else {
+      wrapPoint(h1);
+      wrapPoint(h2);
+    }
 
     for (let p of room.s1) {
       if (p.x === h1.x && p.y === h1.y) room.isGameOver = 1;
@@ -193,6 +206,7 @@ wss.on('connection', (ws) => {
       ws.currentRoom = rId;
       ws.role = 1;
       ws.send('JOINED ' + rId + ' 1 ' + ws.playerName);
+      ws.send('RULES ' + rooms[rId].rules.walls);
       rooms[rId].interval = setInterval(() => gameTick(rId), 150);
       broadcastLobbyRooms();
     } else if (cmd === 'JOIN') {
@@ -203,10 +217,18 @@ wss.on('connection', (ws) => {
         ws.currentRoom = rId;
         ws.role = 2;
         ws.send('JOINED ' + rId + ' 2 ' + ws.playerName);
+        ws.send('RULES ' + rooms[rId].rules.walls);
         resetGame(rooms[rId]);
         broadcastLobbyRooms();
       } else {
         ws.send('ERROR_FULL');
+      }
+    } else if (cmd === 'SETWALLS') {
+      let room = rooms[ws.currentRoom];
+      if (room && ws.role === 1 && !room.p2) {
+        let val = parts[1] === '1' ? 1 : 0;
+        room.rules.walls = val;
+        broadcast(room, 'RULES ' + room.rules.walls);
       }
     } else if (ws.currentRoom && rooms[ws.currentRoom]) {
       let room = rooms[ws.currentRoom];
