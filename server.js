@@ -130,7 +130,7 @@ function broadcast(room, msg) {
 }
 
 function broadcastLobbyRooms() {
-  let list = ['ROOMS'];
+  let list = ['ROOMS', wss.clients.size];
   for (let rId in rooms) {
     if (!rooms[rId].p2) {
       list.push(rId);
@@ -160,8 +160,8 @@ function leaveRoom(ws) {
       room.p2.send('LOBBY');
     }
     delete rooms[rId];
-    broadcastLobbyRooms();
   }
+  broadcastLobbyRooms();
 }
 
 wss.on('connection', (ws) => {
