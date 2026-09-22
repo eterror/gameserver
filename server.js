@@ -168,6 +168,11 @@ wss.on('connection', (ws) => {
   ws.playerName = getRandomName();
   ws.currentRoom = null;
   ws.role = 0;
+  ws.isAlive = true;
+
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
 
   broadcastLobbyRooms();
 
@@ -226,3 +231,14 @@ wss.on('connection', (ws) => {
 
 const PORT = process.env.PORT || 10000;
 server.listen(PORT);
+
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      ws.terminate();
+      return;
+    }
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 20000);
